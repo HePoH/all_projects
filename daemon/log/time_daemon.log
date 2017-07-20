@@ -1,0 +1,19 @@
+[07/11/17] [09:33:19]: Received signal: 10
+[07/11/17] [09:33:19]: Received a request
+[07/11/17] [09:33:19]: Send reply: 07/11/17 09:33:19
+[07/11/17] [09:33:20]: Received signal: 10
+[07/11/17] [09:33:20]: Received a request
+[07/11/17] [09:33:20]: Send reply: 07/11/17 09:33:20
+[07/11/17] [09:33:21]: Received signal: 10
+[07/11/17] [09:33:21]: Received a request
+[07/11/17] [09:33:21]: Send reply: 07/11/17 09:33:21
+[07/11/17] [09:33:21]: Received signal: 10
+[07/11/17] [09:33:21]: Received a request
+[07/11/17] [09:33:21]: Send reply: 07/11/17 09:33:21
+[07/11/17] [09:33:28]: Received signal: 10
+[07/11/17] [09:33:28]: Received a request
+[07/11/17] [09:33:28]: Send reply: 07/11/17 09:33:28
+[07/11/17] [09:33:33]: Received signal: 10
+[07/11/17] [09:33:33]: Received a request
+[07/11/17] [09:33:33]: Send reply: 07/11/17 09:33:33
+mkfifo: File exists

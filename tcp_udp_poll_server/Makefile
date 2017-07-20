@@ -1,0 +1,47 @@
+IDIR = include
+LDIR = lib
+SDIR = src
+LFLAGS = -lpthread
+CFLAGS = -g -O2 -Wall -pedantic -ansi
+CC = gcc
+
+SUBDIRS = $(LDIR) $(SDIR)
+OBJSERV = $(SDIR)/server.o $(LDIR)/server_core.o
+
+OBJTCPCLIENT = $(SDIR)/tcp_client.o $(LDIR)/client_core.o
+OBJUDPCLIENT = $(SDIR)/udp_client.o $(LDIR)/client_core.o
+
+vpath %.c $(SDIR) : $(LDIR)
+vpath %.o $(SDIR) : $(LDIR)
+vpath %.h $(IDIR)
+
+all: server tcp_client udp_client
+
+server: $(OBJSERV)
+		$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS) 
+
+$(OBJSERV): prepare
+
+tcp_client: $(OBJTCPCLIENT)
+		$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS) 
+
+$(OBJTCPCLIENT): prepare
+
+udp_client: $(OBJUDPCLIENT)
+		$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS) 
+
+$(OBJUDPCLIENT): prepare
+
+.PHONY: prepare $(SUBDIRS)
+prepare: $(SUBDIRS)
+
+$(SUBDIRS):
+		make -C $@
+		
+$(SDIR): $(LDIR)
+
+clean:
+		clear
+		cd src	&& $(MAKE) clean
+		cd lib	&& $(MAKE) clean
+		rm -rf server tcp_client udp_client *.o
