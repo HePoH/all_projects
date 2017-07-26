@@ -1,0 +1,7 @@
+http://www.tcpdump.org/pcap.htm
+http://rus-linux.net/MyLDP/algol/libpcap.html
+https://habrahabr.ru/post/227729/
+http://yuba.stanford.edu/~casado/pcap/section1.html
+http://eax.me/libpcap/
+http://www.thegeekstuff.com/2012/10/packet-sniffing-using-libpcap/
+http://www.binarytides.com/packet-sniffer-code-c-libpcap-linux-sockets/
