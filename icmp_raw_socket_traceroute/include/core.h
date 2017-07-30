@@ -1,5 +1,5 @@
-#ifndef CLIENT_CORE_H
-#define CLIENT_CORE_H
+#ifndef CORE_H
+#define CORE_H
 
 #define _ISOC99_SOURCE
 #define _POSIX_SOURCE
@@ -42,8 +42,14 @@ typedef struct pseudo_header {
     u_int16_t len;
 } __attribute__((packed)) PSEUDO_HEADER;
 
-#define SOURCE_IP "192.168.2.1"
-#define DEST_IP "192.168.2.1"
+/*#define SOURCE_IP "192.168.2.1"
+#define DEST_IP "192.168.2.1"*/
+
+/*#define SOURCE_IP "192.168.126.131"
+#define DEST_IP "192.168.126.131"*/
+
+#define SOURCE_IP "109.171.94.21"
+#define DEST_IP "8.8.8.8"
 
 #define MAX_MSG_SIZE 256
 #define MAX_PACKET_SIZE 1024
@@ -51,12 +57,11 @@ typedef struct pseudo_header {
 #define MAX_PACKET_NUM 10
 
 void compute_ip_checksum(struct iphdr* iphdr);
-void compute_tcp_checksum(struct iphdr* iph, struct tcphdr* tcph);
-void compute_udp_checksum(struct iphdr* iph, struct udphdr* udph);
+void compute_icmp_checksum(struct icmphdr* icmph);
 unsigned short compute_checksum(unsigned short* addr, unsigned int count);
 
 void print_ip_packet(const u_char * , int);
-void print_udp_packet(const u_char * , int);
+void print_icmp_packet(const u_char * , int);
 void print_data(const u_char * , int);
 
 #endif

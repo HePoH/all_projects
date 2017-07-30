@@ -48,14 +48,14 @@ typedef struct pseudo_header {
     u_int16_t len;
 } __attribute__((packed)) PSEUDO_HEADER;
 
-#define DEFAULT_IF "eth0"
+#define DEFAULT_IF "ens33" /*"eth0"*/
 
-#define DEST_MAC0 0x00
-#define DEST_MAC1 0x00
-#define DEST_MAC2 0x00
-#define DEST_MAC3 0x00
-#define DEST_MAC4 0x00
-#define DEST_MAC5 0x00
+#define DEST_MAC0 0xF0
+#define DEST_MAC1 0xDE
+#define DEST_MAC2 0xF1
+#define DEST_MAC3 0xFE
+#define DEST_MAC4 0xED
+#define DEST_MAC5 0x58
 
 #define DEST_IP "192.168.2.1"
 #define SOURCE_IP "192.168.2.1"

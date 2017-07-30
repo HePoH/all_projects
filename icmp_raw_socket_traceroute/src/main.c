@@ -1,12 +1,10 @@
 #include "../include/core.h"
 
-/* https://cboard.cprogramming.com/networking-device-communication/107801-linux-raw-socket-programming.html */
-
 int main() {
-	int sd = 0, seq = 0, on = 1, rtn = 0;
+	int sd = 0, ttl = 1, seq = 0, on = 1, rtn = 0;
 	pid_t pid = 0;
 	unsigned short reqs_iphlen = 0, repl_iphlen = 0;
-	struct sockaddr_in dest_addr;
+	struct sockaddr_in dest_addr, repl_source;
 	struct hostent* dest_hst = NULL;
 	struct iphdr *reqs_iph = NULL, *repl_iph = NULL;
 	struct icmphdr *reqs_icmph = NULL, *repl_icmph = NULL;
@@ -34,7 +32,7 @@ int main() {
 	reqs_iph->tot_len = sizeof(struct iphdr) + sizeof(struct icmphdr);
 	reqs_iph->id = htonl(random());
 	reqs_iph->frag_off = 0;
-	reqs_iph->ttl = 255;
+	reqs_iph->ttl = ttl;
 	reqs_iph->protocol = IPPROTO_ICMP;
 	reqs_iph->check = 0;
 	reqs_iph->saddr = inet_addr(SOURCE_IP);
@@ -68,6 +66,8 @@ int main() {
 	((dest_hst != NULL) ? dest_hst->h_name : ""));*/
 
 	while(1) {
+		dest_hst = gethostbyaddr((char *)&dest_addr.sin_addr.s_addr, 4, AF_INET);
+
 		bts = sendto(sd, reqs_pckt, reqs_iph->tot_len, 0, (struct sockaddr*)&dest_addr, socket_len);
 		if (bts == -1) {
 			perror("sendto");
@@ -76,9 +76,10 @@ int main() {
 			exit(EXIT_FAILURE);
 		}
 
-		printf("Sent %d byte packet to %s\n", bts, DEST_IP);
+		printf("Sent %d byte packet to %s (hs: %s)\n", bts, DEST_IP, ((dest_hst != NULL) ? dest_hst->h_name : ""));
 
 		memset(repl_pckt, 0, MAX_PACKET_SIZE);
+		memset(&repl_source, 0, sizeof(struct sockaddr_in));
 
 		bts = recvfrom(sd, repl_pckt, MAX_PACKET_SIZE, 0, NULL, NULL);
 		if (bts == -1) {
@@ -92,12 +93,19 @@ int main() {
 		repl_iphlen = repl_iph->ihl*4;
 		repl_icmph = (struct icmphdr*)(repl_pckt + repl_iphlen);
 
+		repl_source.sin_addr.s_addr = repl_iph->saddr;
+		dest_hst = gethostbyaddr((char *)&repl_source.sin_addr.s_addr, 4, AF_INET);
 		print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));
-		printf("\nReceived %d byte reply from %s:\n", bts, DEST_IP);
+		printf("\nReceived %d byte reply from %s (hs: %s)\n", bts, inet_ntoa(repl_source.sin_addr), ((dest_hst != NULL) ? dest_hst->h_name : ""));
+
+		reqs_iph->check = 0;
+		reqs_iph->ttl = ++ttl;
 
 		reqs_icmph->checksum = 0;
 		reqs_icmph->un.echo.sequence = htons(++seq);
+
 		compute_icmp_checksum(reqs_icmph);
+		compute_ip_checksum(reqs_iph);
 
 		sleep(5);
 	}

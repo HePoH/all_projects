@@ -42,8 +42,11 @@ typedef struct pseudo_header {
     u_int16_t len;
 } __attribute__((packed)) PSEUDO_HEADER;
 
-#define SOURCE_IP "192.168.2.1"
-#define DEST_IP "192.168.2.1"
+/*#define SOURCE_IP "192.168.2.1"
+#define DEST_IP "192.168.2.1"*/
+
+#define SOURCE_IP "192.168.126.131"
+#define DEST_IP "192.168.126.131"
 
 #define MAX_MSG_SIZE 256
 #define MAX_PACKET_SIZE 1024
@@ -51,6 +54,7 @@ typedef struct pseudo_header {
 #define MAX_PACKET_NUM 10
 
 void compute_ip_checksum(struct iphdr* iphdr);
+void compute_icmp_checksum(struct icmphdr* icmph);
 unsigned short compute_checksum(unsigned short* addr, unsigned int count);
 
 void print_ip_packet(const u_char * , int);

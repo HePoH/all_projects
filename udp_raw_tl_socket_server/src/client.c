@@ -69,7 +69,7 @@ int main() {
 		iphdrlen = iph->ihl*4;
 
 		udph = (struct udphdr*)(dgram + iphdrlen);
-		header_size = iphdrlen + sizeof udph;
+		header_size = iphdrlen + sizeof(struct udphdr);
 
 		if (udph->dest == htons(CLIENT_PORT)) {
 			print_udp_packet((u_char*)dgram, sizeof(dgram));

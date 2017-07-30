@@ -27,7 +27,6 @@ int main() {
 	srv_addr.sin_port = htons(SERVER_PORT);
 
 	strncpy(data, "Hello Dmitry!", MAX_MSG_SIZE);
-
 	udpplen = sizeof(struct iphdr) + sizeof(struct udphdr) + strlen(data);
 
 	iph->ihl = 5;
@@ -90,7 +89,7 @@ int main() {
 		iphlen = iph->ihl*4;
 
 		udph = (struct udphdr*)(dgram + iphlen);
-		header_size = iphlen + sizeof udph;
+		header_size = iphlen + sizeof(struct udphdr);
 
 		if (udph->dest == htons(CLIENT_PORT)) {
 			print_udp_packet((u_char*)dgram, sizeof(dgram));

@@ -52,6 +52,7 @@ int main() {
 	}
 
 	srv_addr.sll_family = AF_PACKET;
+	srv_addr.sll_protocol = htons(ETH_P_IP);
 	srv_addr.sll_ifindex = if_idx.ifr_ifindex;
 	srv_addr.sll_halen = ETH_ALEN;
 	srv_addr.sll_addr[0] = DEST_MAC0;
@@ -82,8 +83,8 @@ int main() {
 	iph->ihl = 5;
 	iph->version = 4;
 	iph->tos = 0;
-	iph->tot_len = htons(udpplen);
-	iph->id = htonl(54321);
+	iph->tot_len = sizeof(struct iphdr) + sizeof(struct udphdr) + strlen(data);
+	iph->id = htonl(random());
 	iph->frag_off = 0;
 	iph->ttl = 255;
 	iph->protocol = IPPROTO_UDP;
@@ -91,12 +92,14 @@ int main() {
 	iph->saddr = inet_addr(SOURCE_IP);
 	iph->daddr = inet_addr(DEST_IP);;
 
+	compute_ip_checksum(iph);
+
 	udph->source = htons(SOURCE_PORT);
 	udph->dest = htons(DEST_PORT);
 	udph->len = htons(sizeof(struct udphdr) + strlen(data));
 	udph->check = 0;
 
-	print_udp_packet((u_char*)dgram, sizeof(dgram));
+	/*print_udp_packet((u_char*)dgram, sizeof(dgram));*/
 
 	bts = sendto(sd_cln, dgram, udpplen, 0, (struct sockaddr*)&srv_addr, socket_len);
 	if (bts == -1) {
@@ -126,18 +129,17 @@ int main() {
 		header_size = sizeof(struct ethhdr) + iphlen + sizeof(struct udphdr);
 		data = dgram + header_size;
 
-		if (udph->dest == htons(DEST_PORT)) {
-			if (iph->protocol == 17)
+		/*if (udph->dest == htons(DEST_PORT)) {*/
+			/*if (iph->protocol == IPPROTO_UDP)*/
 				print_udp_packet((u_char*)dgram, sizeof(dgram));
-			else
-				continue;
+			/*else
+				continue;*/
 
-		printf("\n\nClient: receive message from server: '%s' (%d bytes)\n\n", (dgram + header_size), (int)bts);
+			printf("\n\nClient: receive message from server: '%s' (%d bytes)\n\n", (dgram + header_size), (int)bts);
 
-			/*break;*/
-		}
+			/*break;
+		}*/
 	}
 
 	exit(EXIT_SUCCESS);
 }
-
