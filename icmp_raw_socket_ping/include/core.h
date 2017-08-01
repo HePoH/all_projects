@@ -45,8 +45,11 @@ typedef struct pseudo_header {
 /*#define SOURCE_IP "192.168.2.1"
 #define DEST_IP "192.168.2.1"*/
 
-#define SOURCE_IP "192.168.126.131"
-#define DEST_IP "192.168.126.131"
+/*#define SOURCE_IP "192.168.126.131"
+#define DEST_IP "192.168.126.131"*/
+
+#define SOURCE_IP "192.168.2.1"
+#define DEST_IP "195.93.187.16"
 
 #define MAX_MSG_SIZE 256
 #define MAX_PACKET_SIZE 1024

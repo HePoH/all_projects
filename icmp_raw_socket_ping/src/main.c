@@ -92,8 +92,8 @@ int main() {
 		repl_iphlen = repl_iph->ihl*4;
 		repl_icmph = (struct icmphdr*)(repl_pckt + repl_iphlen);
 
-		print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));
-		printf("\nReceived %d byte reply from %s:\n", bts, DEST_IP);
+		/*print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));*/
+		printf("Received %d byte reply from %s:\n", bts, DEST_IP);
 
 		reqs_icmph->checksum = 0;
 		reqs_icmph->un.echo.sequence = htons(++seq);
