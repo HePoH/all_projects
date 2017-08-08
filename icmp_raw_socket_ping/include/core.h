@@ -1,14 +1,7 @@
 #ifndef CORE_H
 #define CORE_H
 
-#define _ISOC99_SOURCE
-#define _POSIX_SOURCE
-#define _POSIX_C_SOURCE
-#define _XOPEN_SOURCE
-#define _SVID_SOURCE
-#define _BSD_SOURCE
 #define _GNU_SOURCE
-#define _DEFAULT_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +13,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
+#include <pthread.h>
 
 #include <netdb.h>
 
@@ -63,5 +57,8 @@ unsigned short compute_checksum(unsigned short* addr, unsigned int count);
 void print_ip_packet(const u_char * , int);
 void print_icmp_packet(const u_char * , int);
 void print_data(const u_char * , int);
+
+void* reqs_hndl(void* args);
+void* repl_hndl(void* args);
 
 #endif

@@ -3,51 +3,8 @@
 /* https://cboard.cprogramming.com/networking-device-communication/107801-linux-raw-socket-programming.html */
 
 int main() {
-	int sd = 0, seq = 0, on = 1, rtn = 0;
-	pid_t pid = 0;
-	unsigned short reqs_iphlen = 0, repl_iphlen = 0;
-	struct sockaddr_in dest_addr;
-	struct hostent* dest_hst = NULL;
-	struct iphdr *reqs_iph = NULL, *repl_iph = NULL;
-	struct icmphdr *reqs_icmph = NULL, *repl_icmph = NULL;
-	char reqs_pckt[MAX_PACKET_SIZE], repl_pckt[MAX_PACKET_SIZE];
-	socklen_t socket_len = 0;
-	ssize_t bts = 0;
-
-	pid = getpid();
-
-	socket_len = sizeof(struct sockaddr_in);
-
-	memset(&dest_addr, 0, socket_len);
-	memset(reqs_pckt, 0, MAX_PACKET_SIZE);
-	memset(repl_pckt, 0, MAX_PACKET_SIZE);
-
-	reqs_iph = (struct iphdr*)reqs_pckt;
-	reqs_icmph = (struct icmphdr*)(reqs_pckt + sizeof(struct iphdr));
-
-	dest_addr.sin_family = AF_INET;
-	dest_addr.sin_addr.s_addr = inet_addr(DEST_IP);
-
-	reqs_iph->ihl = 5;
-	reqs_iph->version = 4;
-	reqs_iph->tos = 0;
-	reqs_iph->tot_len = sizeof(struct iphdr) + sizeof(struct icmphdr);
-	reqs_iph->id = htonl(random());
-	reqs_iph->frag_off = 0;
-	reqs_iph->ttl = 255;
-	reqs_iph->protocol = IPPROTO_ICMP;
-	reqs_iph->check = 0;
-	reqs_iph->saddr = inet_addr(SOURCE_IP);
-	reqs_iph->daddr = inet_addr(DEST_IP);
-
-	reqs_icmph->type = ICMP_ECHO;
-	reqs_icmph->code = 0;
-	reqs_icmph->checksum = 0;
-	reqs_icmph->un.echo.id = pid;
-	reqs_icmph->un.echo.sequence = htons(seq);
-
-	compute_icmp_checksum(reqs_icmph);
-	compute_ip_checksum(reqs_iph);
+	int sd = 0, on = 1, rtn = 0;
+    pthread_t reqs_hndl_tid, repl_hndl_tid;
 
 	sd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (sd == -1) {
@@ -63,44 +20,20 @@ int main() {
 		exit(EXIT_FAILURE);
 	}
 
-	/*dest_hst = gethostbyaddr((char *)&dest_addr.sin_addr.s_addr, 4, AF_INET);
-	printf("Client: icmp echo server %s:%d (hs: %s)\n", inet_ntoa(dest_addr.sin_addr), ntohs(dest_addr.sin_port),
-	((dest_hst != NULL) ? dest_hst->h_name : ""));*/
+    rtn = pthread_create(&reqs_hndl_tid, NULL, reqs_hndl, (void*)&sd);
+    if(rtn != 0) {
+        printf("pthread_create");
+        exit(EXIT_FAILURE);
+    }
 
-	while(1) {
-		bts = sendto(sd, reqs_pckt, reqs_iph->tot_len, 0, (struct sockaddr*)&dest_addr, socket_len);
-		if (bts == -1) {
-			perror("sendto");
+    rtn = pthread_create(&repl_hndl_tid, NULL, repl_hndl, (void*)&sd);
+    if(rtn != 0) {
+        printf("pthread_create");
+        exit(EXIT_FAILURE);
+    }
 
-			close(sd);
-			exit(EXIT_FAILURE);
-		}
+    pthread_join(reqs_hndl_tid, NULL);
+    pthread_join(repl_hndl_tid, NULL);
 
-		printf("Sent %d byte packet to %s\n", bts, DEST_IP);
-
-		memset(repl_pckt, 0, MAX_PACKET_SIZE);
-
-		bts = recvfrom(sd, repl_pckt, MAX_PACKET_SIZE, 0, NULL, NULL);
-		if (bts == -1) {
-			perror("recvfrom");
-
-			close(sd);
-			exit(EXIT_FAILURE);
-		}
-
-		repl_iph = (struct iphdr*)repl_pckt;
-		repl_iphlen = repl_iph->ihl*4;
-		repl_icmph = (struct icmphdr*)(repl_pckt + repl_iphlen);
-
-		/*print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));*/
-		printf("Received %d byte reply from %s:\n", bts, DEST_IP);
-
-		reqs_icmph->checksum = 0;
-		reqs_icmph->un.echo.sequence = htons(++seq);
-		compute_icmp_checksum(reqs_icmph);
-
-		sleep(5);
-	}
-
-	exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
