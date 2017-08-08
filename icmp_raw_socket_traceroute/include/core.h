@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include <ctype.h>
+#include <sys/epoll.h>
 #include <unistd.h>
 #include <errno.h>
 

@@ -1,11 +1,12 @@
 #include "../include/core.h"
 
 int main() {
-	int sd = 0, ttl = 1, seq = 0, on = 1, rtn = 0;
+	int sd = 0, epd = 0, ttl = 4, seq = 0, on = 1, rtn = 0;
 	pid_t pid = 0;
 	unsigned short reqs_iphlen = 0, repl_iphlen = 0;
 	struct sockaddr_in dest_addr, repl_source;
 	struct hostent* dest_hst = NULL;
+    struct epoll_event ev, *events = NULL;
 	struct iphdr *reqs_iph = NULL, *repl_iph = NULL;
 	struct icmphdr *reqs_icmph = NULL, *repl_icmph = NULL;
 	char reqs_pckt[MAX_PACKET_SIZE], repl_pckt[MAX_PACKET_SIZE];
@@ -19,6 +20,28 @@ int main() {
 	memset(&dest_addr, 0, socket_len);
 	memset(reqs_pckt, 0, MAX_PACKET_SIZE);
 	memset(repl_pckt, 0, MAX_PACKET_SIZE);
+    memset(&ev, 0, sizeof(struct epoll_event));
+
+    events = calloc(1, sizeof(struct epoll_event));
+    if (events == NULL) {
+        perror("calloc(events)");
+        exit(EXIT_FAILURE);
+    }
+
+    epd = epoll_create(1);
+    if (epd == -1) {
+        perror("epoll_create");
+        exit(EXIT_FAILURE);
+    }
+
+    ev.events = EPOLLIN;
+    ev.data.fd = sd;
+
+    rtn = epoll_ctl(epd, EPOLL_CTL_ADD, sd, &ev);
+    if (rtn == -1) {
+        perror("epoll_ctl(sd)");
+        exit(EXIT_FAILURE);
+    }
 
 	reqs_iph = (struct iphdr*)reqs_pckt;
 	reqs_icmph = (struct icmphdr*)(reqs_pckt + sizeof(struct iphdr));
@@ -81,6 +104,27 @@ int main() {
 		memset(repl_pckt, 0, MAX_PACKET_SIZE);
 		memset(&repl_source, 0, sizeof(struct sockaddr_in));
 
+        rtn = epoll_wait(epd, events, 1, 3000);
+        if (rtn == -1) {
+            perror("epoll_wait");
+            exit(EXIT_FAILURE);
+        }
+        else
+            if (rtn == 0) {
+                perror("time exceeded");
+
+                reqs_iph->check = 0;
+    		    reqs_iph->ttl = ++ttl;
+
+	    	    reqs_icmph->checksum = 0;
+		        reqs_icmph->un.echo.sequence = htons(++seq);
+
+		        compute_icmp_checksum(reqs_icmph);
+	    	    compute_ip_checksum(reqs_iph);
+
+                continue;
+            }
+
 		bts = recvfrom(sd, repl_pckt, MAX_PACKET_SIZE, 0, NULL, NULL);
 		if (bts == -1) {
 			perror("recvfrom");
@@ -106,8 +150,6 @@ int main() {
 
 		compute_icmp_checksum(reqs_icmph);
 		compute_ip_checksum(reqs_iph);
-
-		sleep(5);
 	}
 
 	exit(EXIT_SUCCESS);
