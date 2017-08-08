@@ -250,7 +250,7 @@ void* reqs_hndl(void* args) {
     reqs_icmph->type = ICMP_ECHO;
     reqs_icmph->code = 0;
     reqs_icmph->checksum = 0;
-    reqs_icmph->un.echo.id = pid;
+    reqs_icmph->un.echo.id = htons(pid);
     reqs_icmph->un.echo.sequence = htons(seq);
 
     compute_icmp_checksum(reqs_icmph);
@@ -265,7 +265,7 @@ void* reqs_hndl(void* args) {
             exit(EXIT_FAILURE);
         }
 
-        printf("\nSent %d byte packet to %s icmp_seq = %d\n", (int)bts, DEST_IP, seq);
+        /*printf("\nSent %d byte packet to %s icmp_seq = %d\n", (int)bts, DEST_IP, seq);*/
 
         reqs_icmph->checksum = 0;
         reqs_icmph->un.echo.sequence = htons(++seq);
@@ -279,9 +279,12 @@ void* repl_hndl(void* args) {
     int sd = 0;
     pid_t pid = 0;
     unsigned short repl_iphlen = 0;
+    struct sockaddr_in repl_source;
+    struct hostent* dest_hst = NULL;
     struct iphdr *repl_iph = NULL;
     struct icmphdr *repl_icmph = NULL;
     char repl_pckt[MAX_PACKET_SIZE];
+    socklen_t socket_len = 0;
     ssize_t bts = 0;
 
     if (args == NULL) {
@@ -295,8 +298,9 @@ void* repl_hndl(void* args) {
 
     while(1) {
         memset(repl_pckt, 0, MAX_PACKET_SIZE);
+        socket_len = sizeof(struct sockaddr_in);
 
-        bts = recvfrom(sd, repl_pckt, MAX_PACKET_SIZE, 0, NULL, NULL);
+        bts = recvfrom(sd, repl_pckt, MAX_PACKET_SIZE, 0, (struct sockaddr *)&repl_source, (socklen_t *)&socket_len);
         if (bts == -1) {
             perror("recvfrom");
 
@@ -308,7 +312,29 @@ void* repl_hndl(void* args) {
         repl_iphlen = repl_iph->ihl*4;
         repl_icmph = (struct icmphdr*)(repl_pckt + repl_iphlen);
 
-        /*print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));*/
-        printf("Received %d byte reply from %s icmp_seq = %d\n", (int)bts, DEST_IP, ntohs(repl_icmph->un.echo.sequence));
+        switch(repl_icmph->type) {
+            case ICMP_ECHOREPLY:
+                if (ntohs(repl_icmph->un.echo.id) == pid) {
+                    dest_hst = gethostbyaddr((char *)&repl_source.sin_addr.s_addr, 4, AF_INET);
+                    /*print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));*/
+                    printf("%d bytes from %s (hs: %s) icmp_seq=%d ttl=%d\n", bts, inet_ntoa(repl_source.sin_addr), ((dest_hst != NULL) ? dest_hst->h_name : ""), ntohs(repl_icmph->un.echo.sequence), repl_iph->ttl);
+                }
+
+            case ICMP_DEST_UNREACH:
+                repl_icmph = (struct icmphdr*)(repl_pckt + 48);
+                if (ntohs(repl_icmph->un.echo.id) == pid)
+                    printf("destination unreachable\n");
+                break;
+
+            case ICMP_TIME_EXCEEDED:
+                repl_icmph = (struct icmphdr*)(repl_pckt + 48);
+                if (ntohs(repl_icmph->un.echo.id) == pid)
+                    printf("time exceed\n");
+
+                break;
+        }
+
+        /*print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));
+        printf("Received %d byte reply from %s icmp_seq = %d\n", (int)bts, DEST_IP, ntohs(repl_icmph->un.echo.sequence));*/
     }
 }
