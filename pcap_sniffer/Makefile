@@ -1,22 +1,22 @@
 IDIR = include
 LDIR = lib
 SDIR = src
+
+CC = gcc
 LFLAGS = -lpthread -lpcap
 CFLAGS = -g -O2 -Wall -pedantic -ansi
-CC = gcc
 
 SUBDIRS = $(LDIR) $(SDIR)
-OBJMAIN = $(SDIR)/main.o $(LDIR)/core.o
+OBJMAIN = $(SDIR)/sniffer.o $(LDIR)/core.o
 
 vpath %.c $(SDIR) : $(LDIR)
 vpath %.o $(SDIR) : $(LDIR)
 vpath %.h $(IDIR)
 
-all: main
+all: sniffer
 
-main: $(OBJMAIN)
+sniffer: $(OBJMAIN)
 		$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS)
-		mv main ~/sudo/snif
 
 $(OBJSERV): prepare
 
@@ -32,5 +32,4 @@ clean:
 		clear
 		cd src	&& $(MAKE) clean
 		cd lib	&& $(MAKE) clean
-		rm -rf main *.o
-		rm -rf ~/sudo/snif
+		rm -rf sniffer *.o
