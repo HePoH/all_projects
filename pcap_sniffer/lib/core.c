@@ -269,7 +269,7 @@ int check_data(const u_char *packet, int size, int proto, char *search_str) {
 	uint16_t ip_hdr_len = 0;
 	struct iphdr *iph = NULL;
     struct tcphdr *tcph = NULL;
-	uint32_t i = 0, k = 0, hdr_size = 0;
+	uint32_t i = 0, k = 0, search_str_len = 0, hdr_size = 0;
 
 	iph = (struct iphdr *)(packet +  sizeof(struct ethhdr));
 	ip_hdr_len = iph->ihl*4;
@@ -293,11 +293,12 @@ int check_data(const u_char *packet, int size, int proto, char *search_str) {
 	}
 
     data = packet + hdr_size;
+    search_str_len = strlen(search_str);
     for(i = 0; i < size - hdr_size; i++){
-        if (k == strlen(search_str))
+        if (k == search_str_len)
             return 0;
 
-        for(k = 0; k < strlen(search_str); k++)
+        for(k = 0; k < search_str_len; k++)
             if (data[i+k] != search_str[k])
                 break;
     }
