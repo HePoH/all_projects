@@ -6,17 +6,16 @@ CFLAGS = -g -O2 -Wall -pedantic -ansi
 CC = gcc
 
 SUBDIRS = $(LDIR) $(SDIR)
-OBJMAIN = $(SDIR)/main.o $(LDIR)/core.o
+OBJMAIN = $(SDIR)/ping.o $(LDIR)/core.o
 
 vpath %.c $(SDIR) : $(LDIR)
 vpath %.o $(SDIR) : $(LDIR)
 vpath %.h $(IDIR)
 
-all: main
+all: ping
 
-main: $(OBJMAIN)
+ping: $(OBJMAIN)
 		$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS)
-		mv main ~/sudo/snif
 
 $(OBJMAIN): prepare
 
@@ -32,5 +31,4 @@ clean:
 		clear
 		cd src	&& $(MAKE) clean
 		cd lib	&& $(MAKE) clean
-		rm -rf main   *.o
-		rm -rf ~/sudo/snif
+		rm -rf ping *.o
