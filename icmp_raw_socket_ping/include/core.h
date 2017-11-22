@@ -6,23 +6,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
+#include <sys/time.h>
 
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
 #include <pthread.h>
+#include <signal.h>
 #include <time.h>
+#include <math.h>
 
 #include <netdb.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <net/ethernet.h>
 #include <netinet/ip_icmp.h>
@@ -34,8 +37,8 @@
 #include <net/if.h>
 
 typedef struct _diff_time {
-    clock_t reqs_time;
-    clock_t repl_time;
+    struct timeval reqs_time;
+    struct timeval repl_time;
 } diff_time_t;
 
 typedef struct pseudo_header {
@@ -65,11 +68,18 @@ typedef struct _ping_sets {
 
 #define DEF_IF_NAME "ens33"
 
+uint32_t stat_pckt_transm, stat_pckt_recive;
+
 int parse_argvs(int argc, char **argv, ping_sets_t *ping_sets);
 void print_usage(char **argv);
 
 int get_self_ip(struct in_addr *sin_addr, char *if_name);
 void print_if_addr();
+
+double get_diff_time(struct timeval t0, struct timeval t1);
+
+void sig_hndl(int sig_num);
+void init_signal();
 
 void compute_ip_checksum(struct iphdr *iphdr);
 void compute_icmp_checksum(struct icmphdr *icmph);

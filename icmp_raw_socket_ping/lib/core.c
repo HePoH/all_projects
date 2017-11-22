@@ -17,7 +17,7 @@ int parse_argvs(int argc, char **argv, ping_sets_t *ping_sets) {
                     return -1;
                 break;
             case 't':
-                res = sscanf(optarg, "%d", (int*)&(ping_sets->reqs_timeout)); 
+                res = sscanf(optarg, "%d", (int*)&(ping_sets->reqs_timeout));
                 if (res != 1)
                     return -1;
                 break;
@@ -35,13 +35,6 @@ int parse_argvs(int argc, char **argv, ping_sets_t *ping_sets) {
                     return -1;
                 }
 
-                /*strncpy((char *)ipv4_addr, get_src_ip(), IP_SIZE);
-                res = inet_pton(AF_INET, (char*)ipv4_addr, (void*)&(ping_sets->src_addr.sin_addr));
-                if (res == -1) {
-                    perror("inet_pton() failed");
-                    return -1;
-                }*/
-
                 res = get_self_ip(&(ping_sets->src_addr.sin_addr), DEF_IF_NAME);
                 if (res == -1) {
                     printf("get_self_ip() failed\n");
@@ -50,7 +43,7 @@ int parse_argvs(int argc, char **argv, ping_sets_t *ping_sets) {
 
                 break;
             case 's':
-                res = sscanf(optarg, "%[^:]", ipv4_addr); 
+                res = sscanf(optarg, "%[^:]", ipv4_addr);
                 if (res != 1)
                     return -1;
 
@@ -63,7 +56,7 @@ int parse_argvs(int argc, char **argv, ping_sets_t *ping_sets) {
             case '?':
                 printf("%s: too few or invalid arguments syntax to initialize\n", argv[0]);
                 print_usage(argv);
-               
+
                 return -1;
 
             default:
@@ -87,7 +80,7 @@ int get_self_ip(struct in_addr *sin_addr, char *if_name) {
 
     ifr.ifr_addr.sa_family = AF_INET;
     strncpy(ifr.ifr_name, if_name, IFNAMSIZ-1);
-    
+
     res = ioctl(sock, SIOCGIFADDR, &ifr);
     close(sock);
     if (res == 0) {
@@ -114,14 +107,44 @@ void print_if_addr() {
 
 		if (family == AF_INET) {
 			s = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in),
-										   host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+                    host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
 			if (s != 0) {
 				printf("getnameinfo() failed: %s\n", gai_strerror(s));
-			    return;	
+			    return;
 			}
 			printf("<Interface>: %s \t <Address> %s\n", ifa->ifa_name, host);
 		}
 	}
+}
+
+double get_diff_time(struct timeval t0, struct timeval t1) {
+    return fabs((t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f);
+}
+
+void sig_hndl(int sig_num) {
+    printf("\n--- ping statistics ---\n");
+    printf("%d packets transmitted, %d received, %1.f%% packet loss\n",
+            (int)stat_pckt_transm,
+            (int)stat_pckt_recive,
+            (double)(100 - stat_pckt_recive/stat_pckt_transm*100));
+
+    exit(EXIT_SUCCESS);
+    return;
+}
+
+void init_signal() {
+    int res = 0;
+    struct sigaction sig_act;
+
+    sig_act.sa_handler = sig_hndl;
+    sigemptyset(&sig_act.sa_mask);
+    sig_act.sa_flags = 0;
+
+    res = sigaction(SIGINT, &sig_act, NULL);
+    if (res == -1) {
+        printf("sigaction() failed\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void compute_ip_checksum(struct iphdr* iph) {
@@ -318,7 +341,6 @@ void print_data(const u_char* data, int size) {
 void* icmp_reqs_hndl(void* args) {
     uint32_t i = 0, seq_num = 0;
     ping_sets_t *ping_sets = NULL;
-    /*uint16_t reqs_iphlen = 0;*/
     struct iphdr* reqs_iph = NULL;
     struct icmphdr* reqs_icmph = NULL;
     uint8_t reqs_pckt[MAX_PACKET_SIZE];
@@ -330,7 +352,7 @@ void* icmp_reqs_hndl(void* args) {
         exit(EXIT_FAILURE);
     }
     ping_sets = args;
-    
+
     sock_len = sizeof(struct sockaddr_in);
 
     memset(reqs_pckt, 0, MAX_PACKET_SIZE);
@@ -360,30 +382,30 @@ void* icmp_reqs_hndl(void* args) {
     compute_ip_checksum(reqs_iph);
 
     for(i = 0; i < ping_sets->reqs_count; i++) {
-        ping_sets->diff_time[seq_num].reqs_time = clock();
+        gettimeofday(&(ping_sets->diff_time[seq_num].reqs_time), NULL);
         res = sendto(ping_sets->sock, reqs_pckt, reqs_iph->tot_len, 0, (struct sockaddr*)&(ping_sets->dst_addr), sock_len);
         if (res == -1) {
             perror("sendto() failed");
             exit(EXIT_FAILURE);
         }
 
+        stat_pckt_transm++;
         seq_num++;
         reqs_icmph->checksum = 0;
         reqs_icmph->un.echo.sequence = htons(seq_num);
-        
-        compute_icmp_checksum(reqs_icmph);
 
+        compute_icmp_checksum(reqs_icmph);
         sleep(1);
-    } 
-    
-    sleep(100000);
+    }
+
+    return NULL;
 }
 
 void *icmp_repl_hndl(void* args) {
     uint32_t seq_num = 0, reqs_count = 0;
     ping_sets_t *ping_sets = NULL;
     uint16_t repl_iphlen = 0;
-    struct sockaddr_in dst_addr; 
+    struct sockaddr_in dst_addr;
     struct hostent* dst_hst = NULL;
     struct iphdr *repl_iph = NULL;
     struct icmphdr *repl_icmph = NULL;
@@ -396,7 +418,7 @@ void *icmp_repl_hndl(void* args) {
         exit(EXIT_FAILURE);
     }
     ping_sets = args;
-    
+
     inet_ntop(AF_INET, (const void*)&(ping_sets->dst_addr.sin_addr), (char*)ipv4_addr, INET_ADDRSTRLEN);
     dst_hst = gethostbyaddr((char *)&(ping_sets->dst_addr.sin_addr), 4, AF_INET);
 
@@ -417,40 +439,41 @@ void *icmp_repl_hndl(void* args) {
         repl_iphlen = repl_iph->ihl*4;
         repl_icmph = (struct icmphdr*)(repl_pckt + repl_iphlen);
 
+        if (ntohs(repl_icmph->un.echo.id) != ping_sets->reqs_id)
+            continue;
+
         switch(repl_icmph->type) {
             case ICMP_ECHOREPLY:
-                if (ntohs(repl_icmph->un.echo.id) == ping_sets->reqs_id) {                
-                    /*print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));*/
-                    seq_num = ntohs(repl_icmph->un.echo.sequence);
+                /*if (ping_sets->debug_opt)
+                    print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));*/
 
-                    ping_sets->diff_time[seq_num].repl_time = clock();
-                    printf("%d bytes from %s (ip: %s): icmp_seq=%d ttl=%d time=%f\n", 
-                            res, 
-                            ((dst_hst != NULL) ? dst_hst->h_name : ""), 
-                            ipv4_addr,
-                            ntohs(repl_icmph->un.echo.sequence), 
-                            repl_iph->ttl,
-                            ((float)(ping_sets->diff_time[seq_num].repl_time - ping_sets->diff_time[seq_num].reqs_time) / 1000000.0F ) * 1000);
+                seq_num = ntohs(repl_icmph->un.echo.sequence);
+                gettimeofday(&(ping_sets->diff_time[seq_num].repl_time), NULL);
+                printf("%d bytes from %s (ip: %s): icmp_seq=%d ttl=%d time=%1.2f ms\n",
+                        res,
+                        ((dst_hst != NULL) ? dst_hst->h_name : ""),
+                        ipv4_addr,
+                        ntohs(repl_icmph->un.echo.sequence),
+                        repl_iph->ttl,
+                        get_diff_time(ping_sets->diff_time[seq_num].repl_time, ping_sets->diff_time[seq_num].reqs_time));
 
-                    reqs_count++;
-                    if (ping_sets->reqs_count == reqs_count)
-                        exit(EXIT_SUCCESS);
-                }
+                stat_pckt_recive++;
+                reqs_count++;
+                if (ping_sets->reqs_count == reqs_count)
+                    pthread_exit(NULL);
+                break;
 
-            /*case ICMP_DEST_UNREACH:
-                repl_icmph = (struct icmphdr*)(repl_pckt + 48);
-                if (ntohs(repl_icmph->un.echo.id) == ping_sets->reqs_id)
-                    printf("destination unreachable\n");
+            case ICMP_DEST_UNREACH:
+                printf("destination unreachable\n");
+                exit(EXIT_FAILURE);
                 break;
 
             case ICMP_TIME_EXCEEDED:
-                repl_icmph = (struct icmphdr*)(repl_pckt + 48);
-                if (ntohs(repl_icmph->un.echo.id) == ping_sets->reqs_id)
-                    printf("time exceed\n");
-
-                break;*/
+                printf("time exceed\n");
+                exit(EXIT_FAILURE);
+                break;
         }
-        /*print_icmp_packet((u_char*)repl_pckt, sizeof(repl_pckt));
-        printf("Received %d byte reply from %s icmp_seq = %d\n", (int)bts, DEST_IP, ntohs(repl_icmph->un.echo.sequence));*/
     }
+
+    return NULL;
 }

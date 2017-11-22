@@ -24,6 +24,7 @@ int main(int argc, char **argv) {
     }
 
     ping_sets.reqs_id = getpid();
+    init_signal();
     
     ping_sets.diff_time = malloc(ping_sets.reqs_count * sizeof(diff_time_t));
     if (ping_sets.diff_time == NULL) {
@@ -74,7 +75,7 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    pthread_join(icmp_reqs_hndl_tid, NULL);
+    /*pthread_join(icmp_reqs_hndl_tid, NULL);*/
     pthread_join(icmp_repl_hndl_tid, NULL);
 
     free(ping_sets.diff_time);
