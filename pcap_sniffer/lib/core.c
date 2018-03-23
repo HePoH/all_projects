@@ -1,7 +1,7 @@
 #include "../include/core.h"
 
 void print_usage_help() {
-    printf("usage syntax: ./sniffer [-h/f/if] -if [interface] -f [filter] -s [search string] -l [packet number limit]\n");
+    printf("usage syntax: ./sniffer -if [interface] -f [filter] -s [search string] -l [packet number limit]\n");
 }
 
 void print_filter_help() {
@@ -213,6 +213,8 @@ void pckt_hndl(u_char *args, const struct pcap_pkthdr *header, const u_char *pac
 
 	++total;
 
+    printf("Protocol: %d!!!!!\n", iph->protocol);
+
 	switch(iph->protocol) {
 		/* ICMP Protocol */
 		case 1:
@@ -247,6 +249,7 @@ void pckt_hndl(u_char *args, const struct pcap_pkthdr *header, const u_char *pac
                 if (res != -1)
 			        print_udp_packet(packet, size);
             }
+			print_udp_packet(packet, size);
 			break;
 
 		/* Some other protocol like ARP etc. */
